@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd
+           http://www.springframework.org/schema/cache
+           http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+    <!-- Enable component scanning -->
+    <context:component-scan base-package="com.enterprise.document">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!-- Enable annotation-driven configuration -->
+    <context:annotation-config/>
+
+    <!-- Property placeholder configuration -->
+    <context:property-placeholder location="classpath:database.properties,classpath:database-init.properties"/>
+
+    <!-- HikariCP DataSource Configuration -->
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maximumPoolSize" value="${hikari.maximumPoolSize}"/>
+        <property name="minimumIdle" value="${hikari.minimumIdle}"/>
+        <property name="connectionTimeout" value="${hikari.connectionTimeout}"/>
+        <property name="idleTimeout" value="${hikari.idleTimeout}"/>
+        <property name="maxLifetime" value="${hikari.maxLifetime}"/>
+        <property name="leakDetectionThreshold" value="${hikari.leakDetectionThreshold}"/>
+    </bean>
+
+    <!-- MyBatis SqlSessionFactory Configuration -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml"/>
+    </bean>
+
+    <!-- MyBatis Mapper Scanner -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.enterprise.document.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- Transaction Manager -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- Enable transaction annotations -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- Cache Manager Configuration -->
+    <bean id="cacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager">
+        <property name="cacheNames">
+            <set>
+                <value>documents</value>
+                <value>borrowingRecords</value>
+            </set>
+        </property>
+    </bean>
+
+    <!-- Enable cache annotations -->
+    <cache:annotation-driven cache-manager="cacheManager"/>
+
+    <!-- JdbcTemplate for database operations -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- Performance Monitoring - JMX MBeans -->
+    <context:mbean-export/>
+
+</beans>

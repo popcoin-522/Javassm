@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.enterprise.document.mapper.BorrowingRecordMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BorrowingRecordResultMap" type="com.enterprise.document.model.BorrowingRecord">
+        <id property="id" column="id"/>
+        <result property="documentCode" column="document_code"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="borrowTime" column="borrow_time"/>
+        <result property="returnTime" column="return_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <!-- 统计借阅记录总数 -->
+    <select id="countRecords" resultType="int">
+        SELECT COUNT(*) FROM borrowing_records
+    </select>
+
+    <!-- 查询所有借阅记录，按借阅时间倒序排列 -->
+    <select id="findAll" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        ORDER BY borrow_time DESC
+    </select>
+
+    <!-- 根据文档编号查询借阅记录 -->
+    <select id="findByDocumentCode" parameterType="string" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        WHERE document_code = #{documentCode}
+        ORDER BY borrow_time DESC
+    </select>
+
+    <!-- 根据用户ID查询借阅记录 -->
+    <select id="findByUserId" parameterType="string" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        WHERE user_id = #{userId}
+        ORDER BY borrow_time DESC
+    </select>
+
+    <!-- 根据借阅状态查询记录 -->
+    <select id="findByStatus" parameterType="string" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        WHERE status = #{status}
+        ORDER BY borrow_time DESC
+    </select>
+
+    <!-- 查询特定用户对特定文档的未归还借阅记录 -->
+    <select id="findActiveBorrowingRecord" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        WHERE document_code = #{documentCode}
+          AND user_id = #{userId}
+          AND user_name = #{userName}
+          AND status = '借阅中'
+        ORDER BY borrow_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 插入新的借阅记录 -->
+    <insert id="insert" parameterType="com.enterprise.document.model.BorrowingRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO borrowing_records (document_code, user_id, user_name, status)
+        VALUES (#{documentCode}, #{userId}, #{userName}, #{status})
+    </insert>
+
+    <!-- 更新借阅记录（主要用于归还操作） -->
+    <update id="update" parameterType="com.enterprise.document.model.BorrowingRecord">
+        UPDATE borrowing_records
+        SET return_time = #{returnTime},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 检查文档是否有关联的借阅记录 -->
+    <select id="countByDocumentCode" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM borrowing_records WHERE document_code = #{documentCode}
+    </select>
+
+    <!-- 分页查询借阅记录 -->
+    <select id="findWithPagination" resultMap="BorrowingRecordResultMap">
+        SELECT id, document_code, user_id, user_name, borrow_time, return_time, status
+        FROM borrowing_records
+        ORDER BY borrow_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+</mapper>
